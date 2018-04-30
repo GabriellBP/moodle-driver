@@ -12,11 +12,11 @@ connection = pymysql.connect(
 
 def main(argv):
     ''' tabela categorias geral '''
-    mdl_course_categories()
+    # mdl_course_categories()
     ''' tabela curso geral '''
-    mdl_course()
+    # mdl_course()
     ''' tabela das seções de cada curso '''
-    mdl_course_sections
+    mdl_course_sections()
 
 
 # Central course table
@@ -65,15 +65,15 @@ def mdl_course_categories():
 def mdl_course_sections():
     try:
         with connection.cursor() as cursor:
-            sql = "SELECT `id`, `course`, `section`, `name`, `summary`, `summaryformat`, `sequence`, `visible`, availability FROM mdl_course_sections"
+            sql = "SELECT `id`, `course`, `section`, `name`, `summary`, `summaryformat`, `sequence`, `visible`, `availability` FROM mdl_course_sections"
             try:
                 cursor.execute(sql)
                 result = cursor.fetchall()
                 for row in result:
                     print("Id: " + str(row[0]) + "\tCourse: " + str(row[1]) + "\tSection: " + str(row[2]) +
                           "\tSummaryFormat: " + str(row[5]) + "\tAvailability: " + str(row[8]) +
-                          "\tVisible: " + str(row[7]) + "\nName: " + row[3] + "\nSequence: " + str(row[6]) +
-                          "\nSummary: \n" + row[4])
+                          "\tVisible: " + str(row[7]) + "\nName: " + str(row[3]) + "\nSequence: " + str(row[6]) +
+                          "\nSummary: \n" + str(row[4]))
                     print("-------------------------------------------------------------------------------------------")
             except:
                 print("Oops! Something wrong")
