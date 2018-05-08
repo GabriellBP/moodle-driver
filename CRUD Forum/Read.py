@@ -15,14 +15,16 @@ def main(argv):
     mdl_forum()
 
     ''' tabela forum discussões '''
-    mdl_forum_discussions()
+    # mdl_forum_discussions()
 
     ''' inscrições nas discussões de fóruns '''
-    mdl_forum_discussion_subs()
+    # mdl_forum_discussion_subs()
 
     ''' Postagens dos fóruns '''
-    mdl_forum_posts()
+    # mdl_forum_posts()
 
+    ''' Inscrições em cada Fórum '''
+    # mdl_forum_subscriptions()
 
 # Forums contain and structure discussion
 def mdl_forum():
@@ -97,6 +99,25 @@ def mdl_forum_posts():
                     print("Id: " + str(row[0]) + "\tDiscussion: " + str(row[1]) + "\tParent: " + str(row[2]) +
                           "\tUserId: " + str(row[3]) + "\nMessageFormat: " + str(row[6]) + "\nSubject: " + row[4] +
                           "\nMessage:\n" + row[5] + "\nAttachment:\n" + row[7])
+                    print("-------------------------------------------------------------------------------------------")
+            except:
+                print("Oops! Something wrong")
+
+        connection.commit()
+    finally:
+        connection.close()
+
+
+# all forum subscritions
+def mdl_forum_subscriptions():
+    try:
+        with connection.cursor() as cursor:
+            sql = "SELECT `id`, `userid`, `forum` FROM mdl_forum_subscriptions"
+            try:
+                cursor.execute(sql)
+                result = cursor.fetchall()
+                for row in result:
+                    print("Id: " + str(row[0]) + "\tUserId: " + str(row[1]) + "\tForum: " + str(row[2]))
                     print("-------------------------------------------------------------------------------------------")
             except:
                 print("Oops! Something wrong")
