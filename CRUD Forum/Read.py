@@ -12,7 +12,7 @@ connection = pymysql.connect(
 
 def main(argv):
     ''' tabela forum geral '''
-    mdl_forum()
+    # mdl_forum()
 
     ''' tabela forum discussões '''
     # mdl_forum_discussions()

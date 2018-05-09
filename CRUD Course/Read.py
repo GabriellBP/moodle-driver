@@ -14,9 +14,9 @@ def main(argv):
     ''' tabela categorias geral '''
     # mdl_course_categories()
     ''' tabela curso geral '''
-    # mdl_course()
+    mdl_course()
     ''' tabela das seções de cada curso '''
-    mdl_course_sections()
+    # mdl_course_sections()
 
 
 # Central course table
