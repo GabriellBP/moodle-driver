@@ -3,6 +3,7 @@ from flask_mysqldb import MySQL
 from flask_cors import CORS
 
 from datetime import datetime
+import json
 
 # Configuração da conexão com o banco de dados do Moodle
 database = {'host': 'localhost', 'user': 'root', 'password': '', 'db': 'moodle'}
@@ -29,10 +30,8 @@ def user(user_id):
         cur = mysql.connection.cursor()
         cur.execute("SELECT u.firstname, u.lastname FROM mdl_user u WHERE u.id = %s" % str(user_id))
         row_headers = [x[0] for x in cur.description]
-        rv = cur.fetchall()
-        json_data = []
-        for result in rv:
-            json_data.append(dict(zip(row_headers, result)))
+        rv = cur.fetchone()
+        json_data = dict(zip(row_headers, rv))
         return jsonify(json_data)
     except:
         return jsonify({'status': 400, 'mensagem': 'ID inválido'})
@@ -73,15 +72,17 @@ def forum(forum_id):
         forum = cur.fetchone()
         cur.execute("SELECT `id`, `name`, `userid`, `timemodified` FROM mdl_forum_discussions WHERE forum = " + str(
             forum_id))
-        row_headers = [x[0] for x in cur.description]
         rv = cur.fetchall()
         discussions = []
         for result in rv:
-            discussions.append(dict(zip(row_headers, result)))
+            username = json.loads(user(result[2]).get_data(as_text=True))
+            discussion = {'id': result[0], 'name': result[1], 'userid': result[2], 'username': username, 'timemodified': result[3]}
+            discussions.append(discussion)
         json_data = {'id': forum[0], 'type': forum[1], 'name': forum[2], 'intro': forum[3], 'introformat': forum[4],
                      'maxattachments': forum[5], 'discussions': discussions}
         return jsonify(json_data)
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({'status': 404, 'mensagem': 'Forum não encontrado'})
 
 
