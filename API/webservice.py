@@ -101,7 +101,8 @@ def discussion(discussion_id):
         rv = cur.fetchall()
         posts = []
         for result in rv:
-            post = {'id': result[0], 'parent': result[1], 'userid': result[2], 'modified': datetime.fromtimestamp(
+            username = json.loads(user(result[2]).get_data(as_text=True))
+            post = {'id': result[0], 'parent': result[1], 'userid': result[2], 'username': username, 'modified': datetime.fromtimestamp(
                 int(result[3])
             ).strftime('%d-%m-%Y %H:%M:%S'), 'subject': result[4], 'message': result[5]}
             posts.append(post)
