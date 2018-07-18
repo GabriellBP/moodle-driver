@@ -22,6 +22,22 @@ def index():
     return "Moodle API RESTFul"
 
 
+# GET /user/:user_id
+@app.route('/user/<int:user_id>')
+def user(user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT u.firstname, u.lastname FROM mdl_user u WHERE u.id = %s" % str(user_id))
+        row_headers = [x[0] for x in cur.description]
+        rv = cur.fetchall()
+        json_data = []
+        for result in rv:
+            json_data.append(dict(zip(row_headers, result)))
+        return jsonify(json_data)
+    except:
+        return jsonify({'status': 400, 'mensagem': 'ID inválido'})
+
+
 # GET /courses/:user_id
 @app.route('/courses/<int:user_id>')
 def courses(user_id):
@@ -76,7 +92,7 @@ def discussion(discussion_id):
         cur = mysql.connection.cursor()
         cur.execute(
             "SELECT `id`, `name`, `firstpost`, `userid` FROM mdl_forum_discussions WHERE id = " + str(discussion_id))
-        discussion = cur.fetchone()# informações abaixo + id_discussão + id_forum
+        discussion = cur.fetchone()  # informações abaixo + id_discussão + id_forum
         cur.execute(
             "SELECT P.id, p.parent, p.userid, p.modified, p.subject, p.message FROM mdl_forum_posts p WHERE discussion = " + str(
                 discussion_id) + " ORDER BY p.id ASC")
@@ -129,7 +145,9 @@ def new_post(discussion_id, message="", subject="", userid=-1):
         if userid != -1:
             cur.execute(sql, (discussion_id, 0, userid, int(timenow), int(timenow), subject, message))
         else:
-            cur.execute(sql, (discussion_id, data['firstpost'], data['userid'], int(timenow), int(timenow), data['subject'], data['message']))
+            cur.execute(sql, (
+            discussion_id, data['firstpost'], data['userid'], int(timenow), int(timenow), data['subject'],
+            data['message']))
             sql = "UPDATE mdl_forum_discussions SET `timemodified` = %s, `usermodified` = %s WHERE `id` = %s"
             cur.execute(sql, (int(timenow), data['userid'], discussion_id))
             mysql.connection.commit()
@@ -149,7 +167,7 @@ def get_last_record(table):
             last = dict(zip(row_headers, last))
             return last
     except:
-            return jsonify({'status': 404, 'mensagem': 'Não encontrado!'})
+        return jsonify({'status': 404, 'mensagem': 'Não encontrado!'})
 
 
 if __name__ == '__main__':
