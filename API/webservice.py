@@ -95,16 +95,19 @@ def discussion(discussion_id):
             "SELECT `id`, `name`, `firstpost`, `userid` FROM mdl_forum_discussions WHERE id = " + str(discussion_id))
         discussion = cur.fetchone()  # informações abaixo + id_discussão + id_forum
         cur.execute(
-            "SELECT P.id, p.parent, p.userid, p.modified, p.subject, p.message FROM mdl_forum_posts p WHERE discussion = " + str(
-                discussion_id) + " ORDER BY p.id ASC")
+            "SELECT p.id, p.parent, p.userid, p.modified, p.subject, p.message FROM mdl_forum_posts p WHERE discussion = " + str(
+                discussion_id) + " AND (p.parent = 0 OR p.parent = " + str(discussion[2]) + ") ORDER BY p.id ASC")
         row_headers = [x[0] for x in cur.description]
         rv = cur.fetchall()
         posts = []
         for result in rv:
             username = json.loads(user(result[2]).get_data(as_text=True))
+            qtt_answers = 0
+            if result[0] != discussion[2]:
+                qtt_answers = get_qtt_answers(result[0], discussion_id)
             post = {'id': result[0], 'parent': result[1], 'userid': result[2], 'username': username, 'modified': datetime.fromtimestamp(
                 int(result[3])
-            ).strftime('%d-%m-%Y %H:%M:%S'), 'subject': result[4], 'message': result[5]}
+            ).strftime('%d-%m-%Y %H:%M:%S'), 'subject': result[4], 'message': result[5], 'qtt_answers': qtt_answers}
             posts.append(post)
         json_data = {'id': discussion[0], 'name': discussion[1], 'firstpost': discussion[2], 'userid': discussion[3],
                      'posts': posts}
@@ -112,6 +115,30 @@ def discussion(discussion_id):
     except Exception as e:
         print(e)
         return jsonify({'status': 404, 'mensagem': 'Discussão não encontrada'})
+
+
+# GET /answer/:answer_id
+@app.route('/answer/<int:answer_id>')
+def answer(answer_id):
+    if answer_id <= 0:
+        return jsonify({'status': 404, 'mensagem': 'id inválido'})
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT p.id, p.userid, p.modified, p.subject, p.message, p.discussion FROM mdl_forum_posts p WHERE p.parent = " + str(
+            answer_id) + " ORDER BY p.id ASC")
+        rv = cur.fetchall()
+        json_data = []
+        for result in rv:
+            username = json.loads(user(result[1]).get_data(as_text=True))
+            qtt_answers = get_qtt_answers(result[0], result[5])
+            post = {'id': result[0], 'userid': result[1], 'username': username, 'modified': datetime.fromtimestamp(
+                int(result[2])
+            ).strftime('%d-%m-%Y %H:%M:%S'), 'subject': result[3], 'message': result[4], 'qtt_answers': qtt_answers}
+            json_data.append(post)
+        return jsonify(json_data)
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 404, 'mensagem': 'Post não encontrado'})
 
 
 # POST /forum/:forum_id
@@ -148,7 +175,7 @@ def new_post(discussion_id, message="", subject="", userid=-1):
             cur.execute(sql, (discussion_id, 0, userid, int(timenow), int(timenow), subject, message))
         else:
             cur.execute(sql, (
-            discussion_id, data['firstpost'], data['userid'], int(timenow), int(timenow), data['subject'],
+            discussion_id, data['postParent'], data['userid'], int(timenow), int(timenow), data['subject'],
             data['message']))
             sql = "UPDATE mdl_forum_discussions SET `timemodified` = %s, `usermodified` = %s WHERE `id` = %s"
             cur.execute(sql, (int(timenow), data['userid'], discussion_id))
@@ -169,8 +196,23 @@ def get_last_record(table):
             last = dict(zip(row_headers, last))
             return last
     except:
-        return jsonify({'status': 404, 'mensagem': 'Não encontrado!'})
+        return jsonify({'status': 500, 'mensagem': 'Internal Server Error'})
+
+
+def get_qtt_answers(post_id, discussion_id):
+    try:
+        with mysql.connection.cursor() as cursor:
+            sql = "SELECT COUNT(id) as 'count' FROM mdl_forum_posts WHERE parent = %s AND  discussion = %s"
+            cursor.execute(sql, (str(post_id), str(discussion_id)))
+            row_headers = [x[0] for x in cursor.description]
+            qtd = cursor.fetchone()
+            qtd = dict(zip(row_headers, qtd))
+            return qtd['count']
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 500, 'mensagem': 'Internal Server Error'})
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+
