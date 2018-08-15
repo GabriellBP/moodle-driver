@@ -13,7 +13,10 @@ connection = pymysql.connect(
 def generate_csv():
     try:
         with connection.cursor() as cursor:
-            sql = "SELECT id, discussion, parent, userid, subject, message, messageformat FROM mdl_forum_posts"
+            sql = "SELECT f.course as courseId, f.forum as forumId, p.discussion as discussionId, p.id as postId, " \
+                  "p.parent as  postParentId, p.userid as userId, p.modified as modifiedDate, p.subject, p.message " \
+                  "FROM mdl_forum_posts p, mdl_forum_discussions f " \
+                  "WHERE f.id = p.discussion"
 
             try:
                 cursor.execute(sql)
@@ -37,14 +40,12 @@ def generate_csv():
 def generate_csv_msql():
     try:
         with connection.cursor() as cursor:
-            sql = "(SELECT 'id', 'discussion', 'parent', 'userid', 'subject', 'message', 'messageformat')" \
+            sql = "(SELECT 'courseId', 'forumId', 'discussionId', 'postId', 'postParentId', 'userId', 'modifiedDate', 'subject', 'message')" \
                   "UNION" \
-                  "(SELECT id, discussion, parent, userid, subject, message, messageformat " \
-                  " FROM mdl_forum_posts " \
-                  "INTO OUTFILE 'temp.csv' FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n')"
-            # sql = "SELECT id, discussion, parent, userid, subject, message, messageformat " \
-            #       " FROM mdl_forum_posts " \
-            #       "INTO OUTFILE 'temp.csv' FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n'"
+                  " (SELECT f.course, f.forum, p.discussion, p.id, p.parent, p.userid, p.modified, p.subject, p.message" \
+                  " FROM mdl_forum_posts p, mdl_forum_discussions f" \
+                  " WHERE f.id = p.discussion" \
+                  " INTO OUTFILE 'temp.csv' FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n')"
             try:
                 cursor.execute(sql)
                 print("OK!")
@@ -59,3 +60,4 @@ def generate_csv_msql():
 
 if __name__ == '__main__':
     generate_csv()
+    # generate_csv_msql()
