@@ -95,9 +95,17 @@ def discussion(discussion_id):
             "SELECT `id`, `name`, `firstpost`, `userid` FROM mdl_forum_discussions WHERE id = " + str(discussion_id))
         discussion = cur.fetchone()  # informações abaixo + id_discussão + id_forum
         cur.execute(
-            "SELECT p.id, p.parent, p.userid, p.modified, p.subject, p.message FROM mdl_forum_posts p WHERE discussion = " + str(
-                discussion_id) + " AND (p.parent = 0 OR p.parent = " + str(discussion[2]) + ") ORDER BY p.id ASC")
-        row_headers = [x[0] for x in cur.description]
+            "SELECT p.id, p.parent, p.userid, p.modified, p.subject, p.message FROM mdl_forum_posts p WHERE p.discussion = " + str(
+                discussion_id) + " AND p.id = " + str(discussion[2]))
+        first_post = cur.fetchone()  # informações firstpost
+        username = json.loads(user(first_post[2]).get_data(as_text=True))
+        first_post = {'id': first_post[0], 'parent': first_post[1], 'userid': first_post[2], 'username': username, 'modified': datetime.fromtimestamp(
+            int(first_post[3])
+        ).strftime('%d-%m-%Y %H:%M:%S'), 'subject': first_post[4], 'message': first_post[5], 'qtt_answers': 0}
+        cur.execute(
+            "SELECT p.id, p.parent, p.userid, p.modified, p.subject, p.message FROM mdl_forum_posts p WHERE p.discussion = " + str(
+                discussion_id) + " AND p.parent = " + str(discussion[2]) + " ORDER BY p.id DESC")
+        # row_headers = [x[0] for x in cur.description]
         rv = cur.fetchall()
         posts = []
         for result in rv:
@@ -109,7 +117,7 @@ def discussion(discussion_id):
                 int(result[3])
             ).strftime('%d-%m-%Y %H:%M:%S'), 'subject': result[4], 'message': result[5], 'qtt_answers': qtt_answers}
             posts.append(post)
-        json_data = {'id': discussion[0], 'name': discussion[1], 'firstpost': discussion[2], 'userid': discussion[3],
+        json_data = {'id': discussion[0], 'name': discussion[1], 'firstpost': first_post, 'userid': discussion[3],
                      'posts': posts}
         return jsonify(json_data)
     except Exception as e:
@@ -125,7 +133,7 @@ def answer(answer_id):
     try:
         cur = mysql.connection.cursor()
         cur.execute("SELECT p.id, p.userid, p.modified, p.subject, p.message, p.discussion FROM mdl_forum_posts p WHERE p.parent = " + str(
-            answer_id) + " ORDER BY p.id ASC")
+            answer_id) + " ORDER BY p.id DESC")
         rv = cur.fetchall()
         json_data = []
         for result in rv:
